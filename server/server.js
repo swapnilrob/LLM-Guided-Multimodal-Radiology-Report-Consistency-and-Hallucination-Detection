@@ -24,6 +24,10 @@ const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+// --- Routes ---
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 // --- Health check route ---
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
