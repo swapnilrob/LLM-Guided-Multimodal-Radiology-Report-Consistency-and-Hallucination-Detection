@@ -164,4 +164,16 @@ const logout = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, refreshToken, logout };
+// --- Get Current User (protected route example) ---
+const getMe = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      success: true,
+      user: req.user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, refreshToken, logout, getMe };
