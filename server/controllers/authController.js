@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Session = require('../models/Session');
 const speakeasy = require('speakeasy');
+const { logAction } = require('../utils/auditLogger');
 
 // --- Helper functions to generate tokens ---
 const generateAccessToken = (userId) => {
@@ -135,6 +136,13 @@ const login = async (req, res, next) => {
       user: user._id,
       ipAddress: req.ip,
       device: req.headers['user-agent'] || 'Unknown device',
+    });
+    
+    await logAction({
+      actionType: 'login',
+      user: user._id,
+      ipAddress: req.ip,
+      details: { email: user.email },
     });
 
     const accessToken = generateAccessToken(user._id);
