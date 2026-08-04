@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Session = require('../models/Session');
+const speakeasy = require('speakeasy');
 
 // --- Helper functions to generate tokens ---
 const generateAccessToken = (userId) => {
@@ -99,7 +100,34 @@ const login = async (req, res, next) => {
         message: 'This account is not active',
       });
     }
+    // --- 2FA check ---
+    if (user.twoFactorEnabled) {
+      const { twoFactorToken } = req.body;
 
+      // No code provided yet — tell the frontend to prompt for it
+      if (!twoFactorToken) {
+        return res.status(200).json({
+          success: true,
+          twoFactorRequired: true,
+          message: 'Two-factor authentication code required',
+        });
+      }
+
+      // Code provided — verify it
+      const isValid2FA = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: twoFactorToken,
+        window: 1,
+      });
+
+      if (!isValid2FA) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid two-factor authentication code',
+        });
+      }
+    }
     user.lastLogin = new Date();
     await user.save();
 
