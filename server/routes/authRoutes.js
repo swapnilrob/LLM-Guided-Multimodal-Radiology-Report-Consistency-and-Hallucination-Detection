@@ -3,9 +3,10 @@ const router = express.Router();
 const { register, login, refreshToken, logout, getMe } = require('../controllers/authController');
 const { setup2FA, verify2FASetup, disable2FA } = require('../controllers/twoFactorController');
 const { protect } = require('../middleware/authMiddleware');
+const { authLimiter } = require('../middleware/rateLimiter');
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', authLimiter, register);
+router.post('/login', authLimiter, login);
 router.post('/refresh', refreshToken);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);

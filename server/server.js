@@ -23,6 +23,9 @@ app.use(express.urlencoded({ extended: true }));
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 app.use(morgan('dev'));
+const { generalLimiter } = require('./middleware/rateLimiter');
+app.use('/api', generalLimiter);
+
 
 // --- Routes ---
 const authRoutes = require('./routes/authRoutes');
