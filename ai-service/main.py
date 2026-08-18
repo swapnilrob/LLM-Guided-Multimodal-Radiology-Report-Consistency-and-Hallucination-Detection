@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import claims, hallucination
+from routers import claims, hallucination, consistency, correction
 import os
 
 load_dotenv()
@@ -22,6 +22,8 @@ app.add_middleware(
 
 app.include_router(claims.router)
 app.include_router(hallucination.router)
+app.include_router(consistency.router)
+app.include_router(correction.router)
 
 @app.get("/health")
 async def health_check():
