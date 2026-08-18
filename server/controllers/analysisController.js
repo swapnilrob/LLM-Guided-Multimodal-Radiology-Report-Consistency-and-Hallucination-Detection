@@ -69,4 +69,52 @@ const createAnalysis = async (req, res, next) => {
   }
 };
 
-module.exports = { createAnalysis };
+// --- Get all analyses for the logged-in user ---
+const getMyAnalyses = async (req, res, next) => {
+  try {
+    const analyses = await Analysis.find({ user: req.user._id })
+      .select('-originalReportText -correctedReportText -claims -consistencyViolations')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: analyses.length,
+      analyses,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// --- Get a single analysis with full details ---
+const getAnalysisById = async (req, res, next) => {
+  try {
+    const analysis = await Analysis.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!analysis) {
+      return res.status(404).json({
+        success: false,
+        message: 'Analysis not found',
+      });
+    }
+
+    // Decrypt the report text for display
+    const { decrypt } = require('../utils/encryption');
+    const decryptedReport = decrypt(analysis.originalReportText);
+
+    res.status(200).json({
+      success: true,
+      analysis: {
+        ...analysis.toObject(),
+        originalReportText: decryptedReport,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createAnalysis, getMyAnalyses, getAnalysisById };

@@ -7,7 +7,7 @@ const callAIService = async (endpoint, body, retries = 50) => {
     // Wait 3 seconds before every attempt (except the first)
     if (attempt > 1) {
       console.log(
-        `Retry ${attempt}/${retries} for ${endpoint} — waiting 3s...`
+        `Retry ${attempt}/${retries} for ${endpoint} — waiting 4s....`
       );
       await sleep(4000);
     }
