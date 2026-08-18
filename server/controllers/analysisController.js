@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { uploadImage } = require('../services/cloudinaryService');
 const { encrypt } = require('../utils/encryption');
 const { logAction } = require('../utils/auditLogger');
+const { runPipeline } = require('../services/pipelineService');
 
 // --- Create a new analysis (upload image + report text) ---
 const createAnalysis = async (req, res, next) => {
@@ -57,6 +58,12 @@ const createAnalysis = async (req, res, next) => {
         createdAt: analysis.createdAt,
       },
     });
+   // Trigger the AI pipeline in the background (don't await — let it run async)
+    runPipeline(analysis._id).catch((err) => {
+      console.error('Pipeline error:', err.message);
+    });
+
+
   } catch (error) {
     next(error);
   }
