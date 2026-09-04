@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAnalysisById } from '../api/analysisApi';
+import { exportAnalysisPdf } from '../utils/exportPdf';
 import Layout from '../components/layout/Layout';
 import SectionHeader from '../components/common/SectionHeader';
 import ReliabilityGauge from '../components/common/ReliabilityGauge';
@@ -125,7 +126,10 @@ export default function ResultsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-border-light rounded text-xs font-medium text-text-medium hover:text-text-dark hover:border-accent-teal transition-colors">
+            <button
+              onClick={() => exportAnalysisPdf(analysis)}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-border-light rounded text-xs font-medium text-text-medium hover:text-text-dark hover:border-accent-teal transition-colors"
+            >
               <Download className="w-3.5 h-3.5" />
               Export PDF
             </button>
@@ -145,7 +149,6 @@ export default function ResultsPage() {
               <SectionHeader number="1" title="INPUT & ANALYSIS" />
 
               <div className="p-3 space-y-4">
-                {/* X-ray image with bounding box overlays */}
                 <ImageViewer
                   imageUrl={imageUrl}
                   claims={claims}
@@ -153,7 +156,6 @@ export default function ResultsPage() {
                   onClaimSelect={setSelectedClaim}
                 />
 
-                {/* Report text */}
                 <div>
                   <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-1.5">
                     AI Generated Report
@@ -163,7 +165,6 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-                {/* Analysis summary */}
                 <div>
                   <p className="text-xs font-semibold text-text-dark uppercase tracking-wide mb-2 pt-2 border-t border-border-light">
                     Analysis Summary
@@ -203,7 +204,6 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-                {/* Reliability gauge */}
                 <div className="pt-2 border-t border-border-light">
                   <ReliabilityGauge score={reliabilityScore} />
                 </div>
@@ -294,4 +294,4 @@ export default function ResultsPage() {
       </div>
     </Layout>
   );
-}  
+}

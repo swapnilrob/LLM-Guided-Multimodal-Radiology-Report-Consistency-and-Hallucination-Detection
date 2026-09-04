@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, FileText, Sparkles, Settings } from 'lucide-react';
+import { Home, FileText, Sparkles, Settings, BarChart3 } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -9,17 +9,23 @@ export default function Sidebar() {
     { icon: Home, path: '/', title: 'Dashboard' },
     { icon: FileText, path: '/history', title: 'Reports' },
     { icon: Sparkles, path: '/upload', title: 'New Analysis' },
+    { icon: BarChart3, path: '/analytics', title: 'Analytics' },
     { icon: Settings, path: '/settings', title: 'Settings' },
   ];
 
   const isActive = (path) => location.pathname === path;
 
+  const handleClick = (path) => {
+    navigate(path);
+    if (onNavigate) onNavigate(); // close mobile sidebar
+  };
+
   return (
-    <aside className="bg-chrome-dark w-12 flex flex-col items-center py-4 gap-4">
+    <aside className="bg-chrome-dark w-12 flex flex-col items-center py-4 gap-4 h-full">
       {sidebarItems.map((item) => (
         <button
           key={item.path}
-          onClick={() => navigate(item.path)}
+          onClick={() => handleClick(item.path)}
           title={item.title}
           className={`p-2 rounded transition-colors
                      ${isActive(item.path)
