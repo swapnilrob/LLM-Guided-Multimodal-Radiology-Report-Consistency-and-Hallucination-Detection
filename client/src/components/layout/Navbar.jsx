@@ -1,20 +1,20 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, User, Settings, Bell } from 'lucide-react';
+import { LayoutDashboard, FileText, User, Settings, Bell, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { darkMode, toggleDarkMode } = useTheme();
 
-  // Navigation items
   const navItems = [
     { label: 'DASHBOARD', icon: LayoutDashboard, path: '/' },
     { label: 'REPORTS', icon: FileText, path: '/history' },
     { label: 'SETTINGS', icon: Settings, path: '/settings' },
   ];
 
-  // Check if a nav item is active
   const isActive = (path) => location.pathname === path;
 
   return (
@@ -27,10 +27,8 @@ export default function Navbar() {
         Radiology Report Analyzer
       </span>
 
-      {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Nav links */}
       <div className="flex items-center gap-6 text-xs tracking-wider font-semibold">
         {navItems.map((item) => (
           <button
@@ -43,6 +41,15 @@ export default function Navbar() {
             {item.label}
           </button>
         ))}
+
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className="text-white/60 hover:text-white transition-colors"
+          title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
 
         {/* User name */}
         <span className="flex items-center gap-1.5 text-white/60">
@@ -64,4 +71,4 @@ export default function Navbar() {
       </div>
     </nav>
   );
-}  
+} 
