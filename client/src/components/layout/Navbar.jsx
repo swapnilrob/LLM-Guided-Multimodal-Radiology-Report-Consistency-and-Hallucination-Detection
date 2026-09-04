@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, User, Settings, Bell, Moon, Sun, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FileText, User, Settings, Moon, Sun, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -55,16 +56,7 @@ export default function Navbar() {
           USER: {user?.fullName?.toUpperCase() || 'GUEST'}
         </span>
 
-        <button
-          onClick={() => {}}
-          className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors relative"
-        >
-          <Bell className="w-4 h-4" />
-          NOTIFICATIONS
-          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
-            3
-          </span>
-        </button>
+        <NotificationDropdown />
       </div>
     </nav>
   );
