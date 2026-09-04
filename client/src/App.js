@@ -8,6 +8,7 @@ import ResultsPage from './pages/ResultsPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ProcessingPage from './pages/ProcessingPage';
+import TwoFactorPage from './pages/TwoFactorPage'; 
 
 // ── Protected Route wrapper ──
 function ProtectedRoute({ children }) {
@@ -29,6 +30,7 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/two-factor" element={<TwoFactorPage />} /> 
 
           {/* Protected routes */}
           <Route

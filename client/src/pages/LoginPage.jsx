@@ -37,11 +37,15 @@ export default function LoginPage() {
 
       // If 2FA is required, the backend returns { twoFactorRequired: true }
       if (data.twoFactorRequired) {
-        // For now, just show a message — 2FA page will be built later
-        setError('Two-factor authentication required. (2FA page coming soon)');
-        setLoading(false);
+        // Redirect to 2FA page with the temporary token
+        navigate('/two-factor', {
+          state: {
+            tempToken: data.tempToken,
+            email: email,
+          },
+        });
         return;
-      }
+      } 
 
       // Success! Save the user and token in AuthContext
       login(data.user, data.accessToken);
@@ -149,7 +153,7 @@ export default function LoginPage() {
             Create one
           </Link>
         </p>
-      </div>
+      </div> 
     </div>
   );
 }  
