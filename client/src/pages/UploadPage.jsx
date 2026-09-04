@@ -137,12 +137,11 @@ export default function UploadPage() {
       const analysisId = data.analysis?._id || data.analysisId || data._id;
 
       if (analysisId) {
-        // Redirect to the results page for this analysis
-        navigate(`/results/${analysisId}`);
+        // Redirect to the processing page to watch the pipeline progress
+        navigate(`/processing/${analysisId}`);
       } else {
-        // If no ID returned, go back to dashboard
         navigate('/');
-      }
+      } 
     } catch (err) {
       console.error('Upload failed:', err);
       const message =
@@ -246,7 +245,7 @@ export default function UploadPage() {
               className="hidden"
             />
           </div>
-        </div>
+        </div> 
 
         {/* ── Panel 2: Report Text ── */}
         <div className="bg-panel rounded border border-border-light overflow-hidden">

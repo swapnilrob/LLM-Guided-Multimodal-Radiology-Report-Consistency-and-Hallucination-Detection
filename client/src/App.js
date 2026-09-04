@@ -7,6 +7,7 @@ import UploadPage from './pages/UploadPage';
 import ResultsPage from './pages/ResultsPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
+import ProcessingPage from './pages/ProcessingPage';
 
 // ── Protected Route wrapper ──
 function ProtectedRoute({ children }) {
@@ -35,6 +36,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <UploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/processing/:id"
+            element={
+              <ProtectedRoute>
+                <ProcessingPage />
               </ProtectedRoute>
             }
           />
@@ -76,4 +85,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;  
