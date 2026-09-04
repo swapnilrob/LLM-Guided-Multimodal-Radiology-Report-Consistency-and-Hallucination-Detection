@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileText, User, Settings, Bell, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, FileText, User, Settings, Bell, Moon, Sun, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -12,6 +12,7 @@ export default function Navbar() {
   const navItems = [
     { label: 'DASHBOARD', icon: LayoutDashboard, path: '/' },
     { label: 'REPORTS', icon: FileText, path: '/history' },
+    { label: 'ANALYTICS', icon: BarChart3, path: '/analytics' },
     { label: 'SETTINGS', icon: Settings, path: '/settings' },
   ];
 
@@ -19,7 +20,6 @@ export default function Navbar() {
 
   return (
     <nav className="bg-chrome-dark h-12 flex items-center px-4 text-white">
-      {/* App title */}
       <span
         onClick={() => navigate('/')}
         className="font-bold text-sm tracking-wide cursor-pointer"
@@ -42,7 +42,6 @@ export default function Navbar() {
           </button>
         ))}
 
-        {/* Dark mode toggle */}
         <button
           onClick={toggleDarkMode}
           className="text-white/60 hover:text-white transition-colors"
@@ -51,13 +50,11 @@ export default function Navbar() {
           {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        {/* User name */}
         <span className="flex items-center gap-1.5 text-white/60">
           <User className="w-4 h-4" />
           USER: {user?.fullName?.toUpperCase() || 'GUEST'}
         </span>
 
-        {/* Notifications */}
         <button
           onClick={() => {}}
           className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors relative"

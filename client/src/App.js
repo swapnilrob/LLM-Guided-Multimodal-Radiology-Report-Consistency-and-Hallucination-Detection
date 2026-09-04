@@ -10,6 +10,7 @@ import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ProcessingPage from './pages/ProcessingPage';
 import TwoFactorPage from './pages/TwoFactorPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 // ── Protected Route wrapper ──
 function ProtectedRoute({ children }) {
@@ -68,6 +69,14 @@ function App() {
               }
             />
             <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/settings"
               element={
                 <ProtectedRoute>
@@ -90,4 +99,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;  
