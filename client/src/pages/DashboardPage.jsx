@@ -11,7 +11,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getAnalyses } from '../api/analysisApi';
+import { getAnalyses, deleteAnalysis } from '../api/analysisApi';
 import Layout from '../components/layout/Layout';
 import StatusBadge from '../components/common/StatusBadge';
 import ReliabilityGauge from '../components/common/ReliabilityGauge';
@@ -20,22 +20,18 @@ export default function DashboardPage() {
   const { user, token, logout } = useAuth();
   const navigate = useNavigate();
 
-  // ── State ──
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // ── Fetch analyses when the page loads ──
   useEffect(() => {
     const fetchAnalyses = async () => {
       try {
         const data = await getAnalyses(token);
-        // The backend may return { analyses: [...] } or just an array
         const list = data.analyses || data || [];
         setAnalyses(list);
       } catch (err) {
         console.error('Failed to fetch analyses:', err);
-        // If token is expired (401), log out
         if (err.response?.status === 401) {
           logout();
           return;
@@ -53,9 +49,7 @@ export default function DashboardPage() {
     }
   }, [token, logout]);
 
-  // ── Compute summary statistics from the analyses list ──
   const totalAnalyses = analyses.length;
-
   const completedAnalyses = analyses.filter((a) => a.status === 'complete');
 
   const averageScore =
@@ -75,12 +69,10 @@ export default function DashboardPage() {
     (a) => a.status !== 'complete' && a.status !== 'failed'
   ).length;
 
-  // ── Get the 5 most recent analyses for the table ──
   const recentAnalyses = [...analyses]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
-  // ── Format a date string to a readable format ──
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     const date = new Date(dateString);
@@ -93,14 +85,12 @@ export default function DashboardPage() {
     });
   };
 
-  // ── Get a short preview of the report text ──
   const getReportPreview = (analysis) => {
     const text = analysis.reportText || analysis.report || '';
     if (!text) return 'No report text';
     return text.length > 80 ? text.substring(0, 80) + '...' : text;
   };
 
-  // ── Get the overall status for a row badge ──
   const getRowStatus = (analysis) => {
     if (analysis.status === 'failed') return 'mismatch';
     if (analysis.status !== 'complete') return 'uncertain';
@@ -109,15 +99,24 @@ export default function DashboardPage() {
     return 'verified';
   };
 
+  const handleDelete = async (analysisId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this analysis? This cannot be undone.')) return;
+    try {
+      await deleteAnalysis(token, analysisId);
+      setAnalyses((prev) => prev.filter((a) => a._id !== analysisId));
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete. Please try again.');
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-4">
-        {/* ── Page Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-text-dark">
-              Dashboard
-            </h1>
+            <h1 className="text-xl font-bold text-text-dark">Dashboard</h1>
             <p className="text-sm text-text-medium mt-0.5">
               Welcome back{user?.fullName ? `, ${user.fullName}` : ''}
             </p>
@@ -132,16 +131,13 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* ── Error Message ── */}
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded text-status-hallucinated text-sm">
             {error}
           </div>
         )}
 
-        {/* ── Summary Cards ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Card 1: Total Analyses */}
           <div className="bg-panel p-4 rounded border border-border-light border-t-[3px] border-t-accent-teal">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-text-medium font-medium">Total Analyses</span>
@@ -151,7 +147,6 @@ export default function DashboardPage() {
             <p className="text-xs text-text-light mt-1">All time</p>
           </div>
 
-          {/* Card 2: Average Score */}
           <div className="bg-panel p-4 rounded border border-border-light border-t-[3px] border-t-accent-teal">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-text-medium font-medium">Average Score</span>
@@ -161,7 +156,6 @@ export default function DashboardPage() {
             <p className="text-xs text-text-light mt-1">Across completed analyses</p>
           </div>
 
-          {/* Card 3: Hallucinations Found */}
           <div className="bg-panel p-4 rounded border border-border-light border-t-[3px] border-t-status-hallucinated">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-text-medium font-medium">Hallucinations</span>
@@ -171,7 +165,6 @@ export default function DashboardPage() {
             <p className="text-xs text-text-light mt-1">Total claims flagged</p>
           </div>
 
-          {/* Card 4: Pending */}
           <div className="bg-panel p-4 rounded border border-border-light border-t-[3px] border-t-status-uncertain">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-text-medium font-medium">Pending</span>
@@ -182,9 +175,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Recent Analyses Table ── */}
         <div className="bg-panel rounded border border-border-light overflow-hidden">
-          {/* Table header */}
           <div className="px-4 py-3 border-b border-border-light flex items-center justify-between">
             <h2 className="text-sm font-semibold text-text-dark">Recent Analyses</h2>
             {analyses.length > 5 && (
@@ -197,7 +188,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Loading state */}
           {loading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 text-accent-teal animate-spin" />
@@ -205,7 +195,6 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Empty state — no analyses yet */}
           {!loading && analyses.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12">
               <FileText className="w-10 h-10 text-text-light mb-3" />
@@ -224,7 +213,6 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Table with data */}
           {!loading && analyses.length > 0 && (
             <table className="w-full">
               <thead>
@@ -242,17 +230,12 @@ export default function DashboardPage() {
                     key={analysis._id}
                     className="border-b border-border-light last:border-b-0 hover:bg-row-hover transition-colors"
                   >
-                    {/* Date */}
                     <td className="px-4 py-3 text-sm text-text-dark whitespace-nowrap">
                       {formatDate(analysis.createdAt)}
                     </td>
-
-                    {/* Report preview */}
                     <td className="px-4 py-3 text-sm text-text-medium max-w-xs truncate">
                       {getReportPreview(analysis)}
                     </td>
-
-                    {/* Reliability score */}
                     <td className="px-4 py-3">
                       {analysis.status === 'complete' ? (
                         <span
@@ -270,13 +253,9 @@ export default function DashboardPage() {
                         <span className="text-sm text-text-light">—</span>
                       )}
                     </td>
-
-                    {/* Status badge */}
                     <td className="px-4 py-3">
                       <StatusBadge status={getRowStatus(analysis)} />
                     </td>
-
-                    {/* Action buttons */}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {analysis.status === 'complete' && (
@@ -289,6 +268,7 @@ export default function DashboardPage() {
                           </button>
                         )}
                         <button
+                          onClick={(e) => handleDelete(analysis._id, e)}
                           className="p-1.5 text-text-medium hover:text-status-hallucinated transition-colors"
                           title="Delete analysis"
                         >

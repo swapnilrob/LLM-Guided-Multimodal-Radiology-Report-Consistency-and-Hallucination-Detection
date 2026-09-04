@@ -15,33 +15,24 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getAnalyses } from '../api/analysisApi';
+import { getAnalyses, deleteAnalysis } from '../api/analysisApi';
 import Layout from '../components/layout/Layout';
 import StatusBadge from '../components/common/StatusBadge';
 
-// How many rows per page
 const PAGE_SIZE = 8;
 
 export default function HistoryPage() {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
 
-  // ── Data state ──
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // ── Search state ──
   const [searchQuery, setSearchQuery] = useState('');
-
-  // ── Sort state ──
   const [sortField, setSortField] = useState('createdAt');
-  const [sortDirection, setSortDirection] = useState('desc'); // 'asc' or 'desc'
-
-  // ── Pagination state ──
+  const [sortDirection, setSortDirection] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ── Fetch analyses ──
   useEffect(() => {
     const fetchAnalyses = async () => {
       try {
@@ -59,16 +50,11 @@ export default function HistoryPage() {
         setLoading(false);
       }
     };
-
-    if (token) {
-      fetchAnalyses();
-    }
+    if (token) fetchAnalyses();
   }, [token, logout]);
 
-  // ── Filter by search query ──
   const filteredAnalyses = useMemo(() => {
     if (!searchQuery.trim()) return analyses;
-
     const query = searchQuery.toLowerCase();
     return analyses.filter((a) => {
       const reportText = (a.reportText || a.report || '').toLowerCase();
@@ -77,11 +63,9 @@ export default function HistoryPage() {
     });
   }, [analyses, searchQuery]);
 
-  // ── Sort ──
   const sortedAnalyses = useMemo(() => {
     const sorted = [...filteredAnalyses].sort((a, b) => {
       let aVal, bVal;
-
       switch (sortField) {
         case 'createdAt':
           aVal = new Date(a.createdAt || 0).getTime();
@@ -102,31 +86,25 @@ export default function HistoryPage() {
         default:
           return 0;
       }
-
       if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
-
     return sorted;
   }, [filteredAnalyses, sortField, sortDirection]);
 
-  // ── Paginate ──
   const totalPages = Math.ceil(sortedAnalyses.length / PAGE_SIZE);
   const paginatedAnalyses = sortedAnalyses.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
-  // Reset to page 1 when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, sortField, sortDirection]);
 
-  // ── Handle sort click ──
   const handleSort = (field) => {
     if (sortField === field) {
-      // Toggle direction if clicking the same column
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
@@ -134,22 +112,16 @@ export default function HistoryPage() {
     }
   };
 
-  // ── Sort icon helper ──
   const SortIcon = ({ field }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-text-light" />;
     if (sortDirection === 'asc') return <ArrowUp className="w-3 h-3 text-accent-teal" />;
     return <ArrowDown className="w-3 h-3 text-accent-teal" />;
   };
 
-  // ── Helper functions ──
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   };
 
@@ -172,21 +144,23 @@ export default function HistoryPage() {
     return analysis.claims.filter((c) => c.verdict === 'hallucinated').length;
   };
 
-  // ── Delete handler ──
   const handleDelete = async (analysisId, e) => {
-    e.stopPropagation(); // prevent row click
+    e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this analysis? This cannot be undone.')) {
       return;
     }
-    // TODO: Call delete API endpoint when available
-    // For now, remove from local state
-    setAnalyses((prev) => prev.filter((a) => a._id !== analysisId));
+    try {
+      await deleteAnalysis(token, analysisId);
+      setAnalyses((prev) => prev.filter((a) => a._id !== analysisId));
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Failed to delete analysis. Please try again.');
+    }
   };
 
   return (
     <Layout>
       <div className="space-y-4">
-        {/* ── Page Header ── */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-text-dark">Analysis History</h1>
@@ -196,15 +170,13 @@ export default function HistoryPage() {
           </div>
           <button
             onClick={() => navigate('/upload')}
-            className="flex items-center gap-2 bg-chrome-section text-white px-4 py-2.5 rounded font-semibold text-sm uppercase tracking-wider
-                       hover:bg-chrome-section-alt transition-colors"
+            className="flex items-center gap-2 bg-chrome-section text-white px-4 py-2.5 rounded font-semibold text-sm uppercase tracking-wider hover:bg-chrome-section-alt transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Analysis
           </button>
         </div>
 
-        {/* ── Error Message ── */}
         {error && (
           <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded text-status-hallucinated text-sm">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -212,7 +184,6 @@ export default function HistoryPage() {
           </div>
         )}
 
-        {/* ── Search Bar ── */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-light" />
           <input
@@ -220,17 +191,11 @@ export default function HistoryPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by report text or status..."
-            className="w-full bg-panel border border-border-light rounded pl-10 pr-4 py-2.5 text-sm text-text-dark
-                       placeholder:text-text-light
-                       focus:border-border-focus focus:ring-1 focus:ring-border-focus focus:outline-none
-                       transition-colors"
+            className="w-full bg-panel border border-border-light rounded pl-10 pr-4 py-2.5 text-sm text-text-dark placeholder:text-text-light focus:border-border-focus focus:ring-1 focus:ring-border-focus focus:outline-none transition-colors"
           />
         </div>
 
-        {/* ── Table ── */}
         <div className="bg-panel rounded border border-border-light overflow-hidden">
-
-          {/* Loading */}
           {loading && (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 text-accent-teal animate-spin" />
@@ -238,18 +203,14 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* Empty state */}
           {!loading && analyses.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16">
               <FileText className="w-10 h-10 text-text-light mb-3" />
               <p className="text-sm font-medium text-text-dark">No analyses found</p>
-              <p className="text-xs text-text-medium mt-1 mb-4">
-                Upload a chest X-ray and report to get started
-              </p>
+              <p className="text-xs text-text-medium mt-1 mb-4">Upload a chest X-ray and report to get started</p>
               <button
                 onClick={() => navigate('/upload')}
-                className="flex items-center gap-2 bg-chrome-section text-white px-4 py-2 rounded text-sm font-semibold uppercase tracking-wider
-                           hover:bg-chrome-section-alt transition-colors"
+                className="flex items-center gap-2 bg-chrome-section text-white px-4 py-2 rounded text-sm font-semibold uppercase tracking-wider hover:bg-chrome-section-alt transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 New Analysis
@@ -257,135 +218,72 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {/* No search results */}
           {!loading && analyses.length > 0 && filteredAnalyses.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16">
               <Search className="w-8 h-8 text-text-light mb-3" />
               <p className="text-sm font-medium text-text-dark">No matching analyses</p>
-              <p className="text-xs text-text-medium mt-1">
-                Try a different search term
-              </p>
+              <p className="text-xs text-text-medium mt-1">Try a different search term</p>
             </div>
           )}
 
-          {/* Table with data */}
           {!loading && paginatedAnalyses.length > 0 && (
             <>
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border-light bg-input-bg">
                     <th className="text-left px-4 py-2.5">
-                      <button
-                        onClick={() => handleSort('createdAt')}
-                        className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors"
-                      >
+                      <button onClick={() => handleSort('createdAt')} className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors">
                         Date <SortIcon field="createdAt" />
                       </button>
                     </th>
+                    <th className="text-left px-4 py-2.5"><span className="text-xs font-semibold text-text-medium">Report</span></th>
                     <th className="text-left px-4 py-2.5">
-                      <span className="text-xs font-semibold text-text-medium">Report</span>
-                    </th>
-                    <th className="text-left px-4 py-2.5">
-                      <button
-                        onClick={() => handleSort('reliabilityScore')}
-                        className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors"
-                      >
+                      <button onClick={() => handleSort('reliabilityScore')} className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors">
                         Score <SortIcon field="reliabilityScore" />
                       </button>
                     </th>
                     <th className="text-left px-4 py-2.5">
-                      <button
-                        onClick={() => handleSort('claims')}
-                        className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors"
-                      >
+                      <button onClick={() => handleSort('claims')} className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors">
                         Hallucinations <SortIcon field="claims" />
                       </button>
                     </th>
                     <th className="text-left px-4 py-2.5">
-                      <button
-                        onClick={() => handleSort('status')}
-                        className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors"
-                      >
+                      <button onClick={() => handleSort('status')} className="flex items-center gap-1 text-xs font-semibold text-text-medium hover:text-text-dark transition-colors">
                         Status <SortIcon field="status" />
                       </button>
                     </th>
-                    <th className="text-right px-4 py-2.5">
-                      <span className="text-xs font-semibold text-text-medium">Actions</span>
-                    </th>
+                    <th className="text-right px-4 py-2.5"><span className="text-xs font-semibold text-text-medium">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedAnalyses.map((analysis) => (
                     <tr
                       key={analysis._id}
-                      onClick={() => {
-                        if (analysis.status === 'complete') {
-                          navigate(`/results/${analysis._id}`);
-                        }
-                      }}
-                      className={`border-b border-border-light last:border-b-0 transition-colors
-                                 ${analysis.status === 'complete' ? 'hover:bg-row-hover cursor-pointer' : ''}`}
+                      onClick={() => { if (analysis.status === 'complete') navigate(`/results/${analysis._id}`); }}
+                      className={`border-b border-border-light last:border-b-0 transition-colors ${analysis.status === 'complete' ? 'hover:bg-row-hover cursor-pointer' : ''}`}
                     >
-                      {/* Date */}
-                      <td className="px-4 py-3 text-sm text-text-dark whitespace-nowrap">
-                        {formatDate(analysis.createdAt)}
-                      </td>
-
-                      {/* Report preview */}
-                      <td className="px-4 py-3 text-sm text-text-medium max-w-xs">
-                        <p className="truncate">{getReportPreview(analysis)}</p>
-                      </td>
-
-                      {/* Score */}
+                      <td className="px-4 py-3 text-sm text-text-dark whitespace-nowrap">{formatDate(analysis.createdAt)}</td>
+                      <td className="px-4 py-3 text-sm text-text-medium max-w-xs"><p className="truncate">{getReportPreview(analysis)}</p></td>
                       <td className="px-4 py-3">
                         {analysis.status === 'complete' ? (
-                          <span
-                            className={`text-sm font-bold ${
-                              analysis.reliabilityScore <= 35
-                                ? 'text-status-hallucinated'
-                                : analysis.reliabilityScore <= 65
-                                ? 'text-status-mismatch'
-                                : 'text-status-verified'
-                            }`}
-                          >
+                          <span className={`text-sm font-bold ${analysis.reliabilityScore <= 35 ? 'text-status-hallucinated' : analysis.reliabilityScore <= 65 ? 'text-status-mismatch' : 'text-status-verified'}`}>
                             {analysis.reliabilityScore}/100
                           </span>
-                        ) : (
-                          <span className="text-sm text-text-light">—</span>
-                        )}
+                        ) : (<span className="text-sm text-text-light">—</span>)}
                       </td>
-
-                      {/* Hallucination count */}
                       <td className="px-4 py-3">
                         {analysis.status === 'complete' ? (
-                          <span
-                            className={`text-sm font-bold ${
-                              getHallucinationCount(analysis) > 0
-                                ? 'text-status-hallucinated'
-                                : 'text-status-verified'
-                            }`}
-                          >
+                          <span className={`text-sm font-bold ${getHallucinationCount(analysis) > 0 ? 'text-status-hallucinated' : 'text-status-verified'}`}>
                             {getHallucinationCount(analysis)}
                           </span>
-                        ) : (
-                          <span className="text-sm text-text-light">—</span>
-                        )}
+                        ) : (<span className="text-sm text-text-light">—</span>)}
                       </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3">
-                        <StatusBadge status={getRowStatus(analysis)} />
-                      </td>
-
-                      {/* Actions */}
+                      <td className="px-4 py-3"><StatusBadge status={getRowStatus(analysis)} /></td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {analysis.status === 'complete' && (
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/results/${analysis._id}`);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); navigate(`/results/${analysis._id}`); }}
                               className="p-1.5 text-text-medium hover:text-accent-teal transition-colors"
                               title="View results"
                             >
@@ -406,44 +304,21 @@ export default function HistoryPage() {
                 </tbody>
               </table>
 
-              {/* ── Pagination ── */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border-light bg-input-bg">
                   <p className="text-xs text-text-medium">
-                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–
-                    {Math.min(currentPage * PAGE_SIZE, sortedAnalyses.length)} of{' '}
-                    {sortedAnalyses.length}
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, sortedAnalyses.length)} of {sortedAnalyses.length}
                   </p>
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className="p-1.5 rounded text-text-medium hover:text-text-dark hover:bg-row-hover transition-colors
-                                 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded text-text-medium hover:text-text-dark hover:bg-row-hover transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-7 h-7 rounded text-xs font-medium transition-colors
-                                   ${currentPage === page
-                                     ? 'bg-chrome-section text-white'
-                                     : 'text-text-medium hover:bg-row-hover'
-                                   }`}
-                      >
+                      <button key={page} onClick={() => setCurrentPage(page)} className={`w-7 h-7 rounded text-xs font-medium transition-colors ${currentPage === page ? 'bg-chrome-section text-white' : 'text-text-medium hover:bg-row-hover'}`}>
                         {page}
                       </button>
                     ))}
-
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      className="p-1.5 rounded text-text-medium hover:text-text-dark hover:bg-row-hover transition-colors
-                                 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded text-text-medium hover:text-text-dark hover:bg-row-hover transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>

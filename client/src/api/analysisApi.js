@@ -25,4 +25,12 @@ export const createAnalysis = async (token, formData) => {
     },
   });
   return response.data;
+};
+
+// DELETE /api/analyses/:id — delete an analysis
+export const deleteAnalysis = async (token, id) => {
+  const response = await API.delete(`/analyses/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
 }; 
