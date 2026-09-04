@@ -1,13 +1,41 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark mode overrides using CSS custom properties */
+:root {
+  --bg-page: #F0F2F5;
+  --bg-panel: #FFFFFF;
+  --bg-input: #F5F5F5;
+  --text-dark: #212121;
+  --text-medium: #616161;
+  --text-light: #9E9E9E;
+  --border-light: #E0E0E0;
+  --row-hover: #F5F5F5;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.dark {
+  --bg-page: #121212;
+  --bg-panel: #1E1E1E;
+  --bg-input: #2A2A2A;
+  --text-dark: #E0E0E0;
+  --text-medium: #A0A0A0;
+  --text-light: #6B6B6B;
+  --border-light: #333333;
+  --row-hover: #252525;
 }
+
+/* Apply CSS variables to Tailwind's utility classes */
+.dark .bg-page { background-color: var(--bg-page); }
+.dark .bg-panel { background-color: var(--bg-panel); }
+.dark .bg-input-bg { background-color: var(--bg-input); }
+.dark .text-text-dark { color: var(--text-dark); }
+.dark .text-text-medium { color: var(--text-medium); }
+.dark .text-text-light { color: var(--text-light); }
+.dark .border-border-light { border-color: var(--border-light); }
+.dark .hover\:bg-row-hover:hover { background-color: var(--row-hover); }
+.dark .bg-row-hover { background-color: var(--row-hover); }
+.dark .bg-row-selected { background-color: #1a2e2b; }
+.dark .bg-red-50 { background-color: #2a1515; }
+.dark .bg-green-50 { background-color: #152a15; }
+.dark .bg-orange-50 { background-color: #2a2015; } 
