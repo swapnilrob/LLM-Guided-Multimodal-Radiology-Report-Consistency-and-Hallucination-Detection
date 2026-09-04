@@ -18,24 +18,22 @@ import ReliabilityGauge from '../components/common/ReliabilityGauge';
 import StatusBadge from '../components/common/StatusBadge';
 import ClaimRow from '../components/results/ClaimRow';
 import ReportComparison from '../components/results/ReportComparison';
+import ImageViewer from '../components/results/ImageViewer';
 
 export default function ResultsPage() {
-  const { id } = useParams();         // get the analysis ID from the URL
+  const { id } = useParams();
   const { token, logout } = useAuth();
   const navigate = useNavigate();
 
-  // ── State ──
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedClaim, setSelectedClaim] = useState(null);
 
-  // ── Fetch the full analysis data ──
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
         const data = await getAnalysisById(token, id);
-        // Backend may return { analysis: {...} } or just the object
         setAnalysis(data.analysis || data);
       } catch (err) {
         console.error('Failed to fetch analysis:', err);
@@ -58,7 +56,6 @@ export default function ResultsPage() {
     }
   }, [token, id, logout]);
 
-  // ── Loading state ──
   if (loading) {
     return (
       <Layout>
@@ -70,7 +67,6 @@ export default function ResultsPage() {
     );
   }
 
-  // ── Error state ──
   if (error || !analysis) {
     return (
       <Layout>
@@ -90,7 +86,6 @@ export default function ResultsPage() {
     );
   }
 
-  // ── Extract data from the analysis object ──
   const claims = analysis.claims || [];
   const consistencyViolations = analysis.consistencyViolations || [];
   const reportText = analysis.reportText || analysis.report || '';
@@ -98,7 +93,6 @@ export default function ResultsPage() {
   const reliabilityScore = analysis.reliabilityScore ?? 0;
   const imageUrl = analysis.imageUrl || analysis.image?.url || '';
 
-  // ── Count claims by verdict ──
   const supportedCount = claims.filter((c) => c.verdict === 'supported').length;
   const hallucinatedCount = claims.filter((c) => c.verdict === 'hallucinated').length;
   const uncertainCount = claims.filter((c) => c.verdict === 'uncertain').length;
@@ -106,7 +100,7 @@ export default function ResultsPage() {
   return (
     <Layout>
       <div className="space-y-3">
-        {/* ── Top Bar: Back button + title + actions ── */}
+        {/* ── Top Bar ── */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -116,9 +110,7 @@ export default function ResultsPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-lg font-bold text-text-dark">
-                Analysis Results
-              </h1>
+              <h1 className="text-lg font-bold text-text-dark">Analysis Results</h1>
               <p className="text-xs text-text-medium">
                 {analysis.createdAt
                   ? new Date(analysis.createdAt).toLocaleString('en-US', {
@@ -147,33 +139,19 @@ export default function ResultsPage() {
         {/* ── Three-Panel Layout ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
-          {/* ════════════════════════════════════════ */}
-          {/* PANEL 1 — INPUT & ANALYSIS (left)       */}
-          {/* ════════════════════════════════════════ */}
+          {/* ══ PANEL 1 — INPUT & ANALYSIS ══ */}
           <div className="lg:col-span-3 space-y-3">
             <div className="bg-panel rounded border border-border-light overflow-hidden">
               <SectionHeader number="1" title="INPUT & ANALYSIS" />
 
               <div className="p-3 space-y-4">
-                {/* X-ray image */}
-                <div>
-                  <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-1.5">
-                    X-Ray Image
-                  </p>
-                  {imageUrl ? (
-                    <div className="border border-border-light rounded-sm overflow-hidden bg-black">
-                      <img
-                        src={imageUrl}
-                        alt="Chest X-ray"
-                        className="w-full h-auto object-contain"
-                      />
-                    </div>
-                  ) : (
-                    <div className="border border-border-light rounded-sm bg-input-bg h-48 flex items-center justify-center">
-                      <p className="text-xs text-text-light">No image available</p>
-                    </div>
-                  )}
-                </div>
+                {/* X-ray image with bounding box overlays */}
+                <ImageViewer
+                  imageUrl={imageUrl}
+                  claims={claims}
+                  selectedClaim={selectedClaim}
+                  onClaimSelect={setSelectedClaim}
+                />
 
                 {/* Report text */}
                 <div>
@@ -233,23 +211,19 @@ export default function ResultsPage() {
             </div>
           </div>
 
-          {/* ════════════════════════════════════════ */}
-          {/* PANEL 2 — CLAIM VERIFICATION (centre)   */}
-          {/* ════════════════════════════════════════ */}
+          {/* ══ PANEL 2 — CLAIM VERIFICATION ══ */}
           <div className="lg:col-span-6 space-y-3">
             <div className="bg-panel rounded border border-border-light overflow-hidden">
               <SectionHeader number="2" title="MULTIMODAL CLAIM VERIFICATION" />
 
-              {/* Claims table header */}
               <div className="flex items-center gap-3 px-4 py-2 border-b border-border-light bg-input-bg">
-                <div className="w-4" /> {/* spacer for expand icon */}
+                <div className="w-4" />
                 <span className="font-mono text-xs text-text-medium w-10">ID</span>
                 <span className="flex-1 text-xs font-semibold text-text-medium">Claim</span>
                 <span className="text-xs font-semibold text-text-medium w-12 text-right">Risk</span>
                 <span className="text-xs font-semibold text-text-medium w-48 text-right">Status</span>
               </div>
 
-              {/* Claims list */}
               {claims.length > 0 ? (
                 <div>
                   {claims.map((claim, index) => (
@@ -269,13 +243,10 @@ export default function ResultsPage() {
               )}
             </div>
 
-            {/* ── Consistency Violations ── */}
             {consistencyViolations.length > 0 && (
               <div className="bg-panel rounded border border-border-light overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-border-light flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-text-dark">
-                    Consistency Violations
-                  </h3>
+                  <h3 className="text-sm font-semibold text-text-dark">Consistency Violations</h3>
                   <StatusBadge status="mismatch" count={consistencyViolations.length} />
                 </div>
 
@@ -283,32 +254,21 @@ export default function ResultsPage() {
                   {consistencyViolations.map((violation, index) => (
                     <div key={index} className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {/* Findings side */}
                         <div>
-                          <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-1">
-                            Findings Section
-                          </p>
+                          <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-1">Findings Section</p>
                           <div className="bg-red-50 border border-red-200 rounded-sm p-2.5 text-sm text-text-dark">
                             {violation.findingsText || violation.findings || 'N/A'}
                           </div>
                         </div>
-
-                        {/* Impression side */}
                         <div>
-                          <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-1">
-                            Impression Section
-                          </p>
+                          <p className="text-xs font-semibold text-text-medium uppercase tracking-wide mb-1">Impression Section</p>
                           <div className="bg-orange-50 border border-orange-200 rounded-sm p-2.5 text-sm text-text-dark">
                             {violation.impressionText || violation.impression || 'N/A'}
                           </div>
                         </div>
                       </div>
-
-                      {/* Explanation */}
                       {violation.explanation && (
-                        <p className="mt-2 text-xs text-text-medium leading-relaxed">
-                          {violation.explanation}
-                        </p>
+                        <p className="mt-2 text-xs text-text-medium leading-relaxed">{violation.explanation}</p>
                       )}
                     </div>
                   ))}
@@ -317,13 +277,10 @@ export default function ResultsPage() {
             )}
           </div>
 
-          {/* ════════════════════════════════════════ */}
-          {/* PANEL 3 — CORRECTION & DECISION (right) */}
-          {/* ════════════════════════════════════════ */}
+          {/* ══ PANEL 3 — CORRECTION & DECISION ══ */}
           <div className="lg:col-span-3">
             <div className="bg-panel rounded border border-border-light overflow-hidden">
               <SectionHeader number="3" title="INTERACTIVE CORRECTION & DECISION" />
-
               <div className="p-3">
                 <ReportComparison
                   originalReport={reportText}
@@ -337,4 +294,4 @@ export default function ResultsPage() {
       </div>
     </Layout>
   );
-} 
+}  
