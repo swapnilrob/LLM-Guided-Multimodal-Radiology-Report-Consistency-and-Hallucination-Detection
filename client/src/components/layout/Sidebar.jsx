@@ -1,17 +1,17 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, FileText, Sparkles, Settings, BarChart3 } from 'lucide-react';
-
+import { Home, FileText, Sparkles, Settings, BarChart3, Shield } from 'lucide-react';
 export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const sidebarItems = [
-    { icon: Home, path: '/', title: 'Dashboard' },
-    { icon: FileText, path: '/history', title: 'Reports' },
-    { icon: Sparkles, path: '/upload', title: 'New Analysis' },
-    { icon: BarChart3, path: '/analytics', title: 'Analytics' },
-    { icon: Settings, path: '/settings', title: 'Settings' },
-  ];
+  { icon: Home, path: '/', title: 'Dashboard' },
+  { icon: FileText, path: '/history', title: 'Reports' },
+  { icon: Sparkles, path: '/upload', title: 'New Analysis' },
+  { icon: BarChart3, path: '/analytics', title: 'Analytics' },
+  { icon: Settings, path: '/settings', title: 'Settings' },
+  { icon: Shield, path: '/admin', title: 'Admin Panel' },
+];
 
   const isActive = (path) => location.pathname === path;
 

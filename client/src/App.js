@@ -1,3 +1,4 @@
+import AdminPage from './pages/AdminPage';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -11,6 +12,7 @@ import SettingsPage from './pages/SettingsPage';
 import ProcessingPage from './pages/ProcessingPage';
 import TwoFactorPage from './pages/TwoFactorPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+  
 
 // ── Protected Route wrapper ──
 function ProtectedRoute({ children }) {
@@ -81,6 +83,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* ── Admin Panel (Phase 6) ── */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
                 </ProtectedRoute>
               }
             />
