@@ -261,6 +261,124 @@ const deleteAnnouncement = async (req, res, next) => {
     next(error);
   }
 };
+// ── F34 — Model Config ──────────────────────────────────────
+let modelConfigCache = {
+  aiModel: 'google/gemma-4-31b-it:free',
+  temperature: 0.3,
+  confidenceThreshold: 0.5,
+  claimExtractionEnabled: true,
+  hallucinationDetectionEnabled: true,
+  consistencyCheckEnabled: true,
+  correctionEnabled: true,
+};
+
+const getModelConfig = async (req, res, next) => {
+  try {
+    res.status(200).json({ success: true, data: modelConfigCache });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateModelConfig = async (req, res, next) => {
+  try {
+    modelConfigCache = { ...modelConfigCache, ...req.body };
+    res.status(200).json({ success: true, data: modelConfigCache });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── F36 — Update User Quota ─────────────────────────────────
+const updateUserQuota = async (req, res, next) => {
+  try {
+    const { quotaMB } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { storageQuotaLimit: quotaMB },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── F38 — Get Feedback ──────────────────────────────────────
+const getFeedback = async (req, res, next) => {
+  try {
+    const Feedback = require('../models/Feedback');
+    const feedback = await Feedback.find()
+      .populate('user', 'fullName email')
+      .populate('analysis', 'createdAt')
+      .sort({ createdAt: -1 })
+      .limit(200);
+
+    res.status(200).json({ success: true, data: feedback });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ── F39 — Research Export ───────────────────────────────────
+const getResearchExport = async (req, res, next) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+
+    const matchStage = { status: 'complete' };
+    if (dateFrom || dateTo) {
+      matchStage.createdAt = {};
+      if (dateFrom) matchStage.createdAt.$gte = new Date(dateFrom);
+      if (dateTo)   matchStage.createdAt.$lte = new Date(dateTo);
+    }
+
+    const summary = await Analysis.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: null,
+          totalAnalyses:              { $sum: 1 },
+          avgReliabilityScore:        { $avg: '$reliabilityScore' },
+          totalHallucinations:        { $sum: { $size: { $ifNull: ['$hallucinations', []] } } },
+          totalConsistencyViolations: { $sum: { $size: { $ifNull: ['$consistencyViolations', []] } } },
+        },
+      },
+    ]);
+
+    const byDate = await Analysis.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          totalAnalyses:        { $sum: 1 },
+          avgScore:             { $avg: '$reliabilityScore' },
+          hallucinationsDetected:    { $sum: { $size: { $ifNull: ['$hallucinations', []] } } },
+          consistencyViolations:     { $sum: { $size: { $ifNull: ['$consistencyViolations', []] } } },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $project: { date: '$_id', totalAnalyses: 1, avgScore: { $round: ['$avgScore', 1] }, hallucinationsDetected: 1, consistencyViolations: 1, _id: 0 } },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        summary: summary[0]
+          ? { ...summary[0], avgReliabilityScore: Math.round(summary[0].avgReliabilityScore), _id: undefined }
+          : { totalAnalyses: 0, avgReliabilityScore: 0, totalHallucinations: 0, totalConsistencyViolations: 0 },
+        byDate,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   getMetrics,
@@ -272,4 +390,9 @@ module.exports = {
   getAnnouncements,
   createAnnouncement,
   deleteAnnouncement,
+  getModelConfig,
+  updateModelConfig,
+  updateUserQuota,
+  getFeedback,
+  getResearchExport,
 };
