@@ -16,3 +16,16 @@ export const getAuditLogs     = (params) => API.get('/admin/audit-logs', { param
 export const getAnnouncements    = () => API.get('/admin/announcements');
 export const createAnnouncement  = (data) => API.post('/admin/announcements', data);
 export const deleteAnnouncement  = (id) => API.delete(`/admin/announcements/${id}`);
+
+// ── Model Config (F34) ─────────────────────────────────────
+export const getModelConfig    = () => API.get('/admin/model-config');
+export const updateModelConfig = (data) => API.put('/admin/model-config', data);
+
+// ── Quota (F36) ────────────────────────────────────────────
+export const updateUserQuota = (userId, quotaMB) => API.patch(`/admin/users/${userId}/quota`, { quotaMB });
+
+// ── Feedback (F38) ─────────────────────────────────────────
+export const getFeedback = (params) => API.get('/admin/feedback', { params });
+
+// ── Research Export (F39) ──────────────────────────────────
+export const getResearchExport = (params) => API.get('/admin/research-export', { params });
