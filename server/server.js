@@ -37,6 +37,9 @@ app.use('/api/sessions', sessionRoutes);
 const analysisRoutes = require('./routes/analysisRoutes');
 app.use('/api/analyses', analysisRoutes);
 
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
 // --- Health check route ---
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });

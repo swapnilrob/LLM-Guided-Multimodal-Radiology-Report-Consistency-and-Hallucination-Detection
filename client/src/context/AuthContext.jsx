@@ -10,16 +10,17 @@ export function AuthProvider({ children }) {
 
   // Called after successful login or register
   const login = useCallback((userData, accessToken) => {
-    setUser(userData);
-    setToken(accessToken);
-  }, []);
+  setUser(userData);
+  setToken(accessToken);
+  sessionStorage.setItem('accessToken', accessToken);
+   }, []);
 
   // Called when the user logs out
   const logout = useCallback(() => {
-    setUser(null);
-    setToken(null);
+  setUser(null);
+  setToken(null);
+  sessionStorage.removeItem('accessToken');
   }, []);
-
   // isAuthenticated is true when we have both a user and a token
   const isAuthenticated = !!user && !!token;
 
