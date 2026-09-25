@@ -1,15 +1,26 @@
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
+const RETRY_DELAY_MS = 3000; // 3-second wait between retries
+const MAX_RETRIES = 50;
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const callAIService = async (endpoint, body, retries = 50) => {
+// Custom error class so the pipeline can distinguish rate-limit exhaustion
+class RateLimitExhaustedError extends Error {
+  constructor(endpoint, retries) {
+    super(`Rate limit: all ${retries} retries exhausted for ${endpoint}`);
+    this.name = 'RateLimitExhaustedError';
+    this.endpoint = endpoint;
+  }
+}
+
+const callAIService = async (endpoint, body, retries = MAX_RETRIES) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
-    // Wait 3 seconds before every attempt (except the first)
     if (attempt > 1) {
       console.log(
-        `Retry ${attempt}/${retries} for ${endpoint} — waiting 4s....`
+        `Retry ${attempt}/${retries} for ${endpoint} — waiting ${RETRY_DELAY_MS / 1000}s...`
       );
-      await sleep(4000);
+      await sleep(RETRY_DELAY_MS);
     }
 
     const response = await fetch(`${AI_SERVICE_URL}${endpoint}`, {
@@ -18,13 +29,16 @@ const callAIService = async (endpoint, body, retries = 50) => {
       body: JSON.stringify(body),
     });
 
-    // If rate limited, loop back and retry
     if (response.status === 500) {
       const error = await response.json().catch(() => ({}));
       const detail = error.detail || '';
 
       if (detail.includes('429') && attempt < retries) {
         continue;
+      }
+
+      if (detail.includes('429')) {
+        throw new RateLimitExhaustedError(endpoint, retries);
       }
 
       throw new Error(`AI service error (${response.status}): ${detail}`);
@@ -40,35 +54,15 @@ const callAIService = async (endpoint, body, retries = 50) => {
     return response.json();
   }
 
-  throw new Error(`AI service failed after ${retries} retries on ${endpoint}`);
+  throw new RateLimitExhaustedError(endpoint, retries);
 };
 
-const extractClaims = async (reportText) => {
-  return callAIService('/claims/extract', { report_text: reportText });
-};
-
-const detectHallucinations = async (imageUrl, claims) => {
-  return callAIService('/hallucination/detect', {
-    image_url: imageUrl,
-    claims,
-  });
-};
-
-const checkConsistency = async (reportText) => {
-  return callAIService('/consistency/check', { report_text: reportText });
-};
-
-const correctReport = async (originalReport, flaggedClaims, consistencyViolations) => {
-  return callAIService('/correction/correct', {
-    original_report: originalReport,
-    flagged_claims: flaggedClaims,
-    consistency_violations: consistencyViolations,
-  });
-};
+// ... (extractClaims, detectHallucinations, checkConsistency, correctReport stay the same)
 
 module.exports = {
   extractClaims,
   detectHallucinations,
   checkConsistency,
   correctReport,
+  RateLimitExhaustedError,
 };

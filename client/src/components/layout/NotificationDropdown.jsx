@@ -1,36 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, X, CheckCircle2, AlertTriangle, Info, FileText } from 'lucide-react';
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'success',
-    title: 'Analysis Complete',
-    message: 'Your report analysis has finished. Reliability score: 72/100.',
-    time: '2 minutes ago',
-    read: false,
-  },
-  {
-    id: 2,
-    type: 'warning',
-    title: 'Hallucination Detected',
-    message: '2 claims flagged as potential hallucinations in your latest report.',
-    time: '15 minutes ago',
-    read: false,
-  },
-  {
-    id: 3,
-    type: 'info',
-    title: 'Welcome!',
-    message: 'Welcome to the Radiology Report Analyzer. Upload your first report to get started.',
-    time: '1 hour ago',
-    read: false,
-  },
-];
-
 export default function NotificationDropdown() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -130,4 +103,4 @@ export default function NotificationDropdown() {
       )}
     </div>
   );
-} 
+}

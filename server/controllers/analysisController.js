@@ -117,4 +117,38 @@ const getAnalysisById = async (req, res, next) => {
   }
 };
 
-module.exports = { createAnalysis, getMyAnalyses, getAnalysisById };
+// --- Delete an analysis ---
+const deleteAnalysis = async (req, res, next) => {
+  try {
+    const analysis = await Analysis.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!analysis) {
+      return res.status(404).json({
+        success: false,
+        message: 'Analysis not found',
+      });
+    }
+
+    await Analysis.findByIdAndDelete(req.params.id);
+
+    await logAction({
+      actionType: 'analysis_deleted',
+      user: req.user._id,
+      ipAddress: req.ip,
+      details: { analysisId: req.params.id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Analysis deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+module.exports = { createAnalysis, getMyAnalyses, getAnalysisById, deleteAnalysis };

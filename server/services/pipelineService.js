@@ -5,7 +5,33 @@ const {
   detectHallucinations,
   checkConsistency,
   correctReport,
+  RateLimitExhaustedError,
 } = require('./aiService');
+
+const STEP_RESTART_DELAY_MS = 5000; // wait 5s before restarting a step
+const MAX_STEP_RESTARTS = 3;        // max times a single step can restart
+
+/**
+ * Runs a pipeline step with automatic restart on rate-limit exhaustion.
+ * If all retries inside callAIService are exhausted due to 429s,
+ * this wrapper waits and restarts that same step from scratch.
+ */
+const runWithRestart = async (stepName, fn) => {
+  for (let restart = 1; restart <= MAX_STEP_RESTARTS; restart++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof RateLimitExhaustedError && restart < MAX_STEP_RESTARTS) {
+        console.log(
+          `[Pipeline] Rate limit exhausted on "${stepName}" — restarting step (attempt ${restart + 1}/${MAX_STEP_RESTARTS}) in ${STEP_RESTART_DELAY_MS / 1000}s...`
+        );
+        await new Promise((r) => setTimeout(r, STEP_RESTART_DELAY_MS));
+        continue;
+      }
+      throw error;
+    }
+  }
+};
 
 /**
  * Computes a 0–100 reliability score based on claim verdicts
@@ -47,15 +73,16 @@ const runPipeline = async (analysisId) => {
     await analysis.save();
 
     const reportText = decrypt(analysis.originalReportText);
-    const claimsResult = await extractClaims(reportText);
+    const claimsResult = await runWithRestart('extractClaims', () =>
+      extractClaims(reportText)
+    );
 
     // --- Step 2: Detect hallucinations ---
     analysis.status = 'detecting_hallucinations';
     await analysis.save();
 
-    const hallucinationResult = await detectHallucinations(
-      analysis.imageUrl,
-      claimsResult.claims
+    const hallucinationResult = await runWithRestart('detectHallucinations', () =>
+      detectHallucinations(analysis.imageUrl, claimsResult.claims)
     );
 
     // Map verdicts to the claim schema format
@@ -81,7 +108,9 @@ const runPipeline = async (analysisId) => {
     analysis.status = 'checking_consistency';
     await analysis.save();
 
-    const consistencyResult = await checkConsistency(reportText);
+    const consistencyResult = await runWithRestart('checkConsistency', () =>
+      checkConsistency(reportText)
+    );
 
     analysis.consistencyViolations = consistencyResult.violations.map((v) => ({
       findingsSentence: v.findings_sentence,
@@ -107,10 +136,8 @@ const runPipeline = async (analysisId) => {
       }));
 
     if (flaggedClaims.length > 0 || consistencyResult.violation_count > 0) {
-      const correctionResult = await correctReport(
-        reportText,
-        flaggedClaims,
-        consistencyResult.violations
+      const correctionResult = await runWithRestart('correctReport', () =>
+        correctReport(reportText, flaggedClaims, consistencyResult.violations)
       );
       analysis.correctedReportText = correctionResult.corrected_report;
     }

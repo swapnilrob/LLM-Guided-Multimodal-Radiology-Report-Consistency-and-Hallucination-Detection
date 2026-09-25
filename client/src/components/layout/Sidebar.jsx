@@ -1,8 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, FileText, Sparkles, Settings, BarChart3, Shield } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
 export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
   const sidebarItems = [
   { icon: Home, path: '/', title: 'Dashboard' },
@@ -10,14 +13,14 @@ export default function Sidebar({ onNavigate }) {
   { icon: Sparkles, path: '/upload', title: 'New Analysis' },
   { icon: BarChart3, path: '/analytics', title: 'Analytics' },
   { icon: Settings, path: '/settings', title: 'Settings' },
-  { icon: Shield, path: '/admin', title: 'Admin Panel' },
+  ...(user?.role === 'admin' ? [{ icon: Shield, path: '/admin', title: 'Admin Panel' }] : []),
 ];
 
   const isActive = (path) => location.pathname === path;
 
   const handleClick = (path) => {
     navigate(path);
-    if (onNavigate) onNavigate(); // close mobile sidebar
+    if (onNavigate) onNavigate();
   };
 
   return (
@@ -38,4 +41,4 @@ export default function Sidebar({ onNavigate }) {
       ))}
     </aside>
   );
-} 
+}
