@@ -34,3 +34,7 @@ Thumbs.db
 # Editor
 .vscode/*
 !.vscode/extensions.json
+
+
+evaluation/data/
+evaluation/venv/
