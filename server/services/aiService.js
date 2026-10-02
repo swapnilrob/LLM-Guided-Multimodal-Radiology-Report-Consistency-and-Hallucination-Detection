@@ -1,11 +1,10 @@
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
-const RETRY_DELAY_MS = 3000; // 3-second wait between retries
+const RETRY_DELAY_MS = 3000;
 const MAX_RETRIES = 50;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Custom error class so the pipeline can distinguish rate-limit exhaustion
 class RateLimitExhaustedError extends Error {
   constructor(endpoint, retries) {
     super(`Rate limit: all ${retries} retries exhausted for ${endpoint}`);
@@ -57,7 +56,37 @@ const callAIService = async (endpoint, body, retries = MAX_RETRIES) => {
   throw new RateLimitExhaustedError(endpoint, retries);
 };
 
-// ... (extractClaims, detectHallucinations, checkConsistency, correctReport stay the same)
+const extractClaims = async (reportText) => {
+  return callAIService('/claims/extract', { report_text: reportText });
+};
+
+const detectHallucinations = async (imageUrl, claims) => {
+  return callAIService('/hallucination/detect', { image_url: imageUrl, claims });
+};
+
+const checkConsistency = async (reportText) => {
+  return callAIService('/consistency/check', { report_text: reportText });
+};
+
+const correctReport = async (reportText, flaggedClaims, violations) => {
+  const safeViolations = (violations || []).map((v) => ({
+    findings_sentence: v.findings_sentence || v.findingsSentence || '',
+    impression_sentence: v.impression_sentence || v.impressionSentence || '',
+    explanation: v.explanation || '',
+  }));
+
+  const safeClaims = (flaggedClaims || []).map((c) => ({
+    text: c.text || '',
+    verdict: c.verdict || '',
+    explanation: c.explanation || '',
+  }));
+
+  return callAIService('/correction/correct', {
+    original_report: reportText,
+    flagged_claims: safeClaims,
+    consistency_violations: safeViolations,
+  });
+};
 
 module.exports = {
   extractClaims,
