@@ -57,7 +57,27 @@ const callAIService = async (endpoint, body, retries = MAX_RETRIES) => {
   throw new RateLimitExhaustedError(endpoint, retries);
 };
 
-// ... (extractClaims, detectHallucinations, checkConsistency, correctReport stay the same)
+// --- Wrapper functions for each AI pipeline step ---
+
+const extractClaims = async (reportText) => {
+  return callAIService('/extract-claims', { report_text: reportText });
+};
+
+const detectHallucinations = async (claims, imageUrl) => {
+  return callAIService('/detect-hallucinations', { claims, image_url: imageUrl });
+};
+
+const checkConsistency = async (reportText) => {
+  return callAIService('/check-consistency', { report_text: reportText });
+};
+
+const correctReport = async (reportText, hallucinations, consistencyViolations) => {
+  return callAIService('/generate-correction', {
+    report_text: reportText,
+    hallucinations,
+    consistency_violations: consistencyViolations,
+  });
+};
 
 module.exports = {
   extractClaims,
