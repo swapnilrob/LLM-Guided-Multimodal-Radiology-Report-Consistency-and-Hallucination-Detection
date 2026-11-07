@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const http = require('http');
 const { Server } = require('socket.io');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const connectDB = require('./config/db');
 
 // Connect to MongoDB
@@ -49,6 +51,18 @@ app.use('/api/teams', teamRoutes);
 
 const commentRoutes = require('./routes/commentRoutes');
 app.use('/api/comments', commentRoutes);
+
+const apiKeyRoutes = require('./routes/apiKeyRoutes');
+app.use('/api/api-keys', apiKeyRoutes);
+
+const institutionalApiRoutes = require('./routes/institutionalApiRoutes');
+app.use('/api/v1', institutionalApiRoutes);
+
+// Swagger docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Radiology Hallucination Detection API Docs',
+}));
 
 // --- Health check route ---
 app.get('/api/health', (req, res) => {
