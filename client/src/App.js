@@ -12,7 +12,8 @@ import SettingsPage from './pages/SettingsPage';
 import ProcessingPage from './pages/ProcessingPage';
 import TwoFactorPage from './pages/TwoFactorPage';
 import AnalyticsPage from './pages/AnalyticsPage';
-  
+import SharedResultsPage from './pages/SharedResultsPage';
+import TeamsPage from './pages/TeamsPage';
 
 // ── Protected Route wrapper ──
 function ProtectedRoute({ children }) {
@@ -36,6 +37,9 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/two-factor" element={<TwoFactorPage />} />
+
+            {/* Shared analysis — public via token */}
+            <Route path="/shared/:token" element={<SharedResultsPage />} />
 
             {/* Protected routes */}
             <Route
@@ -79,6 +83,16 @@ function App() {
               }
             />
             <Route
+              path="/teams"
+              element={
+                <ProtectedRoute>
+                  <TeamsPage />
+                </ProtectedRoute>
+              }
+            />
+
+
+            <Route
               path="/settings"
               element={
                 <ProtectedRoute>
@@ -110,4 +124,4 @@ function App() {
   );
 }
 
-export default App;  
+export default App;

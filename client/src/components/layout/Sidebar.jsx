@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, FileText, Sparkles, Settings, BarChart3, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Users } from 'lucide-react';
 
 export default function Sidebar({ onNavigate }) {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function Sidebar({ onNavigate }) {
   { icon: FileText, path: '/history', title: 'Reports' },
   { icon: Sparkles, path: '/upload', title: 'New Analysis' },
   { icon: BarChart3, path: '/analytics', title: 'Analytics' },
+  { icon: Users, path: '/teams', label: 'Teams' },
   { icon: Settings, path: '/settings', title: 'Settings' },
   ...(user?.role === 'admin' ? [{ icon: Shield, path: '/admin', title: 'Admin Panel' }] : []),
 ];
